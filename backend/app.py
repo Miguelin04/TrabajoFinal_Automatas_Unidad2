@@ -9,7 +9,9 @@ from flask import Flask, render_template, request, jsonify
 from parser import tokenizar, Parser, NodoAST, ErrorSintactico
 from gramatica import metricas_gramatica, CADENAS_EJEMPLO, compute_first, compute_follow, check_ll1
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            template_folder="../frontend/templates",
+            static_folder="../frontend/static")
 
 
 def nodo_a_dict(nodo):
