@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador Sintáctico Avanzado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #050505;
+            --bg-surface: #111111;
+            --bg-surface-hover: #1a1a1a;
+            --primary: #00ffcc;
+            --primary-glow: rgba(0, 255, 204, 0.4);
+            --secondary: #7000ff;
+            --secondary-glow: rgba(112, 0, 255, 0.4);
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --border: #222222;
+            --success: #00e676;
+            --danger: #ff1744;
+            --font-sans: 'Inter', sans-serif;
+            --font-mono: 'Fira Code', monospace;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(112, 0, 255, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 204, 0.08), transparent 25%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .header {
+            background: rgba(17, 17, 17, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--secondary), transparent);
+            animation: borderGlow 3s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 15px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            font-weight: 300;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: rgba(17, 17, 17, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 255, 204, 0.05);
+        }
+
+        .card-header {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-body { padding: 24px; }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 15px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        textarea:focus { 
+            outline: none; 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 3px var(--primary-glow), inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        textarea::placeholder { color: #444; }
+
+        .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: var(--font-sans);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #00b386);
+            color: #000;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-primary:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--primary-glow);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover { 
+            background: rgba(255, 255, 255, 0.05); 
+            border-color: var(--text-muted);
+        }
+
+        .result-box {
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-box.valida {
+            display: block;
+            background: rgba(0, 230, 118, 0.05);
+            border: 1px solid rgba(0, 230, 118, 0.2);
+            box-shadow: inset 0 0 20px rgba(0, 230, 118, 0.05);
+        }
+
+        .result-box.invalida {
+            display: block;
+            background: rgba(255, 23, 68, 0.05);
+            border: 1px solid rgba(255, 23, 68, 0.2);
+            box-shadow: inset 0 0 20px rgba(255, 23, 68, 0.05);
+        }
+
+        .result-box .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .badge-valida { background: rgba(0, 230, 118, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .badge-invalida { background: rgba(255, 23, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+
+        .token-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .token {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .token:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .token.reserved { color: #ff00ff; border-color: rgba(255, 0, 255, 0.3); }
+        .token.op { color: #ffd700; border-color: rgba(255, 215, 0, 0.3); }
+        .token.delim { color: #00ffff; border-color: rgba(0, 255, 255, 0.3); }
+        .token.lit { color: #a4c8e1; border-color: rgba(164, 200, 225, 0.3); }
+
+        .tree-container {
+            background: #000000;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            max-height: 500px;
+            overflow: auto;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .tree-container .nt { color: var(--primary); font-weight: 600; text-shadow: 0 0 8px var(--primary-glow); }
+        .tree-container .term { color: #ffd700; }
+        .tree-container .eps { color: #ff1744; font-style: italic; }
+        .tree-container .line { color: #333333; }
+
+        .examples-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .examples-grid { grid-template-columns: 1fr; }
+        }
+
+        .example-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 2px; height: 100%;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .example-card:hover {
+            background: rgba(0, 255, 204, 0.03);
+            border-color: rgba(0, 255, 204, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .example-card:hover::before { transform: scaleY(1); }
+
+        .example-card .ex-title {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .example-card .ex-code {
+            color: var(--primary);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            word-break: break-all;
+            opacity: 0.8;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .metric-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            border-color: var(--secondary);
+            box-shadow: 0 0 15px var(--secondary-glow);
+            transform: translateY(-2px);
+        }
+
+        .metric-card .val {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            margin-bottom: 4px;
+        }
+
+        .metric-card .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .metric-card.ok .val { color: var(--success); text-shadow: 0 0 10px rgba(0, 230, 118, 0.4); }
+        .metric-card.fail .val { color: var(--danger); text-shadow: 0 0 10px rgba(255, 23, 68, 0.4); }
+
+        .error-detail {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(255, 23, 68, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--danger);
+            font-size: 14px;
+        }
+
+        .error-detail .label { color: var(--danger); font-weight: 700; display: inline-block; width: 90px; }
+        .error-detail .val { color: #ffffff; font-family: var(--font-mono); font-size: 13px; }
+
+        .stats { margin-top: 20px; font-size: 13px; color: var(--text-muted); display: flex; justify-content: space-between; }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .tab:hover:not(.active) { color: var(--text-main); background: rgba(255,255,255,0.05); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Analizador Sintáctico IF / WHILE</h1>
+        <p>Gramática libre de contexto · Autómata de pila · Parser descendente recursivo</p>
+    </div>
+
+    <div class="container">
+        <!-- Panel izquierdo: entrada -->
+        <div class="card">
+            <div class="card-header">📝 Entrada</div>
+            <div class="card-body">
+                <textarea id="entrada" placeholder="Escribe tu codigo aqui...&#10;&#10;Ej: if x == 1 then y = 0 else z = 1"></textarea>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" onclick="analizar()">▶ Analizar</button>
+                    <button class="btn btn-secondary" onclick="limpiar()">✕ Limpiar</button>
+                </div>
+
+                <div style="margin-top:16px">
+                    <div style="font-size:13px;color:#94a3b8;font-weight:600;margin-bottom:6px">Cadenas de ejemplo:</div>
+                    <div class="examples-grid" id="ejemplos"></div>
+                </div>
+
+                <div class="stats" id="stats"></div>
+            </div>
+        </div>
+
+        <!-- Panel derecho: resultados -->
+        <div>
+            <div class="card" style="margin-bottom:20px">
+                <div class="card-header">📊 Resultado</div>
+                <div class="card-body">
+                    <div id="resultado"></div>
+                    <div id="error-detalle"></div>
+                    <div style="margin-top:12px">
+                        <div class="tabs">
+                            <div class="tab active" data-tab="arbol" onclick="cambiarTab('arbol')">🌲 Árbol de derivación</div>
+                            <div class="tab" data-tab="tokens" onclick="cambiarTab('tokens')">🏷️ Tokens</div>
+                        </div>
+                        <div class="tab-content active" id="tab-arbol">
+                            <div class="tree-container" id="arbol">Esperando entrada...</div>
+                        </div>
+                        <div class="tab-content" id="tab-tokens">
+                            <div id="tokens"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Metricas -->
+            <div class="card">
+                <div class="card-header">📈 Métricas de la gramática</div>
+                <div class="card-body" id="metricas"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Proyecto: Analizador sintáctico de estructuras IF y WHILE · GLC + PDA + Descenso recursivo
+    </div>
+
+    <script>
+        // Cargar ejemplos al iniciar
+        fetch('/cadenas_ejemplo')
+            .then(r => r.json())
+            .then(data => {
+                const cont = document.getElementById('ejemplos');
+                cont.innerHTML = data.map(e => `
+                    <div class="example-card" onclick="cargarEjemplo('${e.entrada.replace(/'/g, "\\'")}')">
+                        <div class="ex-title">#${e.id} — ${e.descripcion}</div>
+                        <div class="ex-code">${e.entrada.length > 50 ? e.entrada.slice(0, 50) + '...' : e.entrada}</div>
+                    </div>
+                `).join('');
+            });
+
+        // Cargar metricas
+        fetch('/metricas')
+            .then(r => r.json())
+            .then(m => {
+                document.getElementById('metricas').innerHTML = `
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="val">${m.no_terminales}</div>
+                            <div class="label">No terminales</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="val">${m.terminales}</div>
+                            <div class="label">Terminales</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="val">${m.producciones}</div>
+                            <div class="label">Producciones</div>
+                        </div>
+                        <div class="metric-card ${m.es_ll1 ? 'ok' : 'fail'}">
+                            <div class="val">${m.conflictos_ll1}</div>
+                            <div class="label">Conflictos LL(1)</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+        function cargarEjemplo(entrada) {
+            document.getElementById('entrada').value = entrada;
+            analizar();
+        }
+
+        function limpiar() {
+            document.getElementById('entrada').value = '';
+            document.getElementById('resultado').innerHTML = '';
+            document.getElementById('arbol').textContent = 'Esperando entrada...';
+            document.getElementById('tokens').innerHTML = '';
+            document.getElementById('error-detalle').innerHTML = '';
+            document.getElementById('stats').textContent = '';
+        }
+
+        function analizar() {
+            const entrada = document.getElementById('entrada').value.trim();
+            if (!entrada) return;
+
+            fetch('/analizar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entrada })
+            })
+            .then(r => r.json())
+            .then(data => {
+                const resDiv = document.getElementById('resultado');
+                const arbolDiv = document.getElementById('arbol');
+                const tokensDiv = document.getElementById('tokens');
+                const errDiv = document.getElementById('error-detalle');
+                const statsDiv = document.getElementById('stats');
+
+                errDiv.innerHTML = '';
+
+                if (data.valida) {
+                    resDiv.innerHTML = `
+                        <div class="result-box valida">
+                            <span class="badge badge-valida">✓ VÁLIDA</span>
+                            <div style="color:#86efac;font-size:13px">La cadena fue aceptada por el parser</div>
+                        </div>
+                    `;
+
+                    // Arbol coloreado
+                    const coloreado = colorearArbol(data.arbol_texto);
+                    arbolDiv.innerHTML = coloreado;
+
+                    // Tokens
+                    tokensDiv.innerHTML = renderTokens(data.tokens);
+
+                    statsDiv.textContent = `Total tokens: ${data.total_tokens} | Árbol generado correctamente`;
+                } else {
+                    const tipo = data.tipo_error === 'lexico' ? 'ERROR LÉXICO' : 'ERROR SINTÁCTICO';
+                    const badgeClass = data.tipo_error === 'lexico' ? 'badge-invalida' : 'badge-invalida';
+                    resDiv.innerHTML = `
+                        <div class="result-box invalida">
+                            <span class="badge ${badgeClass}">✗ ${tipo}</span>
+                            <div style="color:#fca5a5;font-size:13px">La cadena fue rechazada por el parser</div>
+                        </div>
+                    `;
+
+                    arbolDiv.textContent = '(No se generó árbol — entrada inválida)';
+
+                    if (data.tokens && data.tokens.length) {
+                        tokensDiv.innerHTML = renderTokens(data.tokens);
+                    } else {
+                        tokensDiv.innerHTML = '<div style="color:#94a3b8">No se pudieron tokenizar</div>';
+                    }
+
+                    errDiv.innerHTML = `
+                        <div class="error-detail">
+                            <div><span class="label">Error:</span> <span class="val">${data.error}</span></div>
+                            ${data.pos_error !== undefined ? `<div style="margin-top:4px"><span class="label">Posición:</span> <span class="val">token #${data.pos_error}</span></div>` : ''}
+                            ${data.esperado ? `<div style="margin-top:4px"><span class="label">Esperado:</span> <span class="val">${data.esperado}</span></div>` : ''}
+                            ${data.encontrado ? `<div style="margin-top:4px"><span class="label">Encontrado:</span> <span class="val">'${data.encontrado}'</span></div>` : ''}
+                        </div>
+                    `;
+
+                    statsDiv.textContent = `Tokens analizados: ${(data.tokens || []).length}`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('resultado').innerHTML = `
+                    <div class="result-box invalida">
+                        <span class="badge badge-invalida">✗ ERROR</span>
+                        <div style="color:#fca5a5;font-size:13px">${err.message}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTokens(tokens) {
+            if (!tokens || !tokens.length) return '<div style="color:#94a3b8">Sin tokens</div>';
+            const reserved = ['if','then','else','while','do','true','false'];
+            const ops = ['==','<','>','+','-','*','/','='];
+            const delims = ['{','}','(',')',';'];
+            const html = tokens.map(t => {
+                let cls = 'token';
+                if (reserved.includes(t)) cls += ' reserved';
+                else if (ops.includes(t)) cls += ' op';
+                else if (delims.includes(t)) cls += ' delim';
+                else cls += ' lit';
+                return `<span class="${cls}">${t}</span>`;
+            }).join('');
+            return `<div style="margin-bottom:6px;color:#94a3b8;font-size:12px">${tokens.length} tokens:</div>
+                    <div class="token-list">${html}</div>`;
+        }
+
+        function colorearArbol(texto) {
+            if (!texto) return '';
+            return texto.split('\n').map(linea => {
+                const indent = linea.match(/^\s*/)[0];
+                const contenido = linea.trim();
+                if (!contenido) return linea;
+
+                // Colorear segun tipo
+                let coloreado = contenido
+                    .replace(/(Program|Stmt|IfStmt|WhileStmt|AssignStmt|Block|StmtList|RestStmtList|Cond|RelOp|Expr|ExprPrime|AddOp|Term|TermPrime|MulOp|Factor)/g,
+                        '<span class="nt">$1</span>')
+                    .replace(/('(?:if|then|else|while|do|true|false|id|num)'|id|num)/g,
+                        '<span class="term">$1</span>')
+                    .replace(/(\u03b5|ε)/g, '<span class="eps">$1</span>')
+                    .replace(/^([├└─│┌┐└┘│]+)/, '<span class="line">$1</span>');
+
+                return indent + coloreado;
+            }).join('\n');
+        }
+
+        function cambiarTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
