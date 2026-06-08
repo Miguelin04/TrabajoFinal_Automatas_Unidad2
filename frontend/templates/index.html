@@ -430,6 +430,134 @@
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
 
+        .collapsible-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .collapsible-table thead {
+            background: rgba(0, 255, 204, 0.05);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .collapsible-table th {
+            padding: 12px;
+            text-align: left;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .collapsible-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+            font-family: var(--font-mono);
+            color: var(--text-main);
+        }
+
+        .collapsible-table tbody tr:hover {
+            background: rgba(0, 255, 204, 0.03);
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        .collapsible-table tbody tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .lexema {
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .lexema.reservada {
+            color: #ff00ff;
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        .lexema.identificador {
+            color: #a4c8e1;
+            background: rgba(164, 200, 225, 0.05);
+        }
+
+        .lexema.operador {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .lexema.delimitador {
+            color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .categoria {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .categoria.reservada {
+            color: #ff00ff;
+        }
+
+        .categoria.identificador {
+            color: #a4c8e1;
+        }
+
+        .categoria.operador {
+            color: #ffd700;
+        }
+
+        .categoria.delimitador {
+            color: #00ffff;
+        }
+
+        .toggle-btn {
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(112, 0, 255, 0.2));
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-btn:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.3), rgba(112, 0, 255, 0.3));
+            border-color: var(--primary);
+        }
+
+        .toggle-btn.open {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #000;
+        }
+
+        .table-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        .table-wrapper.open {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .table-wrapper::-webkit-scrollbar { width: 6px; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
+
         .footer {
             text-align: center;
             padding: 30px;
@@ -497,7 +625,115 @@
         </div>
     </div>
 
-    <div class="footer">
+    <!-- Tabla de Lexemas Desplegable -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 30px; margin-bottom: 40px;">
+        <button class="toggle-btn" id="toggleBtn" onclick="toggleTable()">
+            <span id="toggleIcon">▼</span> Referencia de Lexemas y Categorías
+        </button>
+        <div class="table-wrapper" id="tableWrapper">
+            <table class="collapsible-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Lexema</th>
+                        <th>Categoría</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><span class="lexema reservada">while</span></td>
+                        <td><span class="categoria reservada">Palabra Reservada</span></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td><span class="lexema operador">></span></td>
+                        <td><span class="categoria operador">Operador</span></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td><span class="lexema identificador">num</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td><span class="lexema reservada">do</span></td>
+                        <td><span class="categoria reservada">Palabra Reservada</span></td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td><span class="lexema delimitador">{</span></td>
+                        <td><span class="categoria delimitador">Delimitador</span></td>
+                    </tr>
+                    <tr>
+                        <td>7</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td><span class="lexema operador">=</span></td>
+                        <td><span class="categoria operador">Operador</span></td>
+                    </tr>
+                    <tr>
+                        <td>9</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>10</td>
+                        <td><span class="lexema operador">+</span></td>
+                        <td><span class="categoria operador">Operador</span></td>
+                    </tr>
+                    <tr>
+                        <td>11</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>12</td>
+                        <td><span class="lexema delimitador">;</span></td>
+                        <td><span class="categoria delimitador">Delimitador</span></td>
+                    </tr>
+                    <tr>
+                        <td>13</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>14</td>
+                        <td><span class="lexema operador">=</span></td>
+                        <td><span class="categoria operador">Operador</span></td>
+                    </tr>
+                    <tr>
+                        <td>15</td>
+                        <td><span class="lexema identificador">id</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>16</td>
+                        <td><span class="lexema operador">-</span></td>
+                        <td><span class="categoria operador">Operador</span></td>
+                    </tr>
+                    <tr>
+                        <td>17</td>
+                        <td><span class="lexema identificador">num</span></td>
+                        <td><span class="categoria identificador">Identificador/Número</span></td>
+                    </tr>
+                    <tr>
+                        <td>18</td>
+                        <td><span class="lexema delimitador">}</span></td>
+                        <td><span class="categoria delimitador">Delimitador</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
         Proyecto: Analizador sintáctico de estructuras IF y WHILE · GLC + PDA + Descenso recursivo
     </div>
 
@@ -672,6 +908,16 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
             document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function toggleTable() {
+            const wrapper = document.getElementById('tableWrapper');
+            const btn = document.getElementById('toggleBtn');
+            const icon = document.getElementById('toggleIcon');
+            
+            wrapper.classList.toggle('open');
+            btn.classList.toggle('open');
+            icon.textContent = wrapper.classList.contains('open') ? '▲' : '▼';
         }
     </script>
 </body>
